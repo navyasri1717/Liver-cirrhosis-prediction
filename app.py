@@ -1,48 +1,36 @@
 
+
       import streamlit as st
-      import pickle
+      import pandas as pd
       import numpy as np
+      import joblib
 
-      # Load the model
-      with open("model.pkl", "rb") as f:
-          model = pickle.load(f)
+      # Load trained model and normalizer
+      model = joblib.load("model.pkl")
+      normalizer = joblib.load("normalizer.pkl")
 
-          # Load the scaler
-          with open("normalizer.pkl", "rb") as f:
-              scaler = pickle.load(f)
+      # App title
+      st.title("🩺 Liver Cirrhosis Prediction App")
+      st.markdown("Enter the details below to predict if the person has liver cirrhosis.")
 
-              st.set_page_config(page_title="Liver Cirrhosis Prediction", layout="centered")
+      # Input fields
+      age = st.number_input("Age", min_value=1, max_value=120, step=1)
+      bilirubin = st.number_input("Total Bilirubin", min_value=0.0, format="%.2f")
+      alk_phosphate = st.number_input("Alkaline Phosphotase", min_value=0.0, format="%.2f")
+      sgpt = st.number_input("SGPT (Alanine Aminotransferase)", min_value=0.0, format="%.2f")
+      sgot = st.number_input("SGOT (Aspartate Aminotransferase)", min_value=0.0, format="%.2f")
+      proteins = st.number_input("Total Proteins", min_value=0.0, format="%.2f")
+      albumin = st.number_input("Albumin", min_value=0.0, format="%.2f")
+      ratio = st.number_input("Albumin/Globulin Ratio", min_value=0.0, format="%.2f")
 
-              st.title("🧪 Liver Cirrhosis Prediction App")
-              st.markdown("Predict whether a person is likely to have liver cirrhosis based on medical parameters.")
+      # Prediction button
+      if st.button("Predict"):
+          input_data = np.array([[age, bilirubin, alk_phosphate, sgpt, sgot, proteins, albumin, ratio]])
+          input_data_normalized = normalizer.transform(input_data)
+          prediction = model.predict(input_data_normalized)
 
-              # Input fields
-              age = st.number_input("Age", min_value=1, max_value=120)
-              gender = st.selectbox("Gender", ["Male", "Female"])
-              total_bilirubin = st.number_input("Total Bilirubin (mg/dL)")
-              direct_bilirubin = st.number_input("Direct Bilirubin (mg/dL)")
-              alkaline_phosphotase = st.number_input("Alkaline Phosphotase (IU/L)")
-              alamine_aminotransferase = st.number_input("Alamine Aminotransferase (IU/L)")
-              aspartate_aminotransferase = st.number_input("Aspartate Aminotransferase (IU/L)")
-              total_proteins = st.number_input("Total Proteins (g/dL)")
-              albumin = st.number_input("Albumin (g/dL)")
-              ag_ratio = st.number_input("Albumin and Globulin Ratio")
-
-              # Gender to numeric
-              gender_num = 1 if gender == "Male" else 0
-
-              # Predict button
-              if st.button("Predict"):
-                  input_data = np.array([[age, gender_num, total_bilirubin, direct_bilirubin,
-                                              alkaline_phosphotase, alamine_aminotransferase,
-                                                                          aspartate_aminotransferase, total_proteins,
-                                                                                                      albumin, ag_ratio]])
-
-                                                                                                          input_scaled = scaler.transform(input_data)
-                                                                                                              prediction = model.predict(input_scaled)
-
-                                                                                                                  if prediction[0] == 1:
-                                                                                                                          st.error("⚠️ High Risk: Liver Cirrhosis Likely")
-                                                                                                                              else:
-                                                                                                                                      st.success("✅ Low Risk: No Liver Cirrhosis Detected")
-                                                                                                                                      
+          if prediction[0] == 1:
+              st.error("⚠ The model predicts that liver cirrhosis is likely.")
+          else:
+              st.success("✅ The model predicts that liver cirrhosis is not likely.")
+      
